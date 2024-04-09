@@ -7,6 +7,8 @@ package jr05.form;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import jr05.domain.City;
 import jr05.repository.CityRepository;
 
@@ -100,9 +102,7 @@ public class CityForm extends javax.swing.JDialog {
 
         tblCity.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null},
-                {null, null},
-                {null, null}
+
             },
             new String [] {
                 "zipcode", "name"
@@ -124,6 +124,11 @@ public class CityForm extends javax.swing.JDialog {
             }
         });
         tblCity.setCellSelectionEnabled(true);
+        tblCity.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblCityMouseClicked(evt);
+            }
+        });
         jScrollPane1.setViewportView(tblCity);
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Izaberi grad"));
@@ -132,9 +137,9 @@ public class CityForm extends javax.swing.JDialog {
 
         jLabel3.setText("Name:");
 
-        txtZip.setText("jTextField1");
+        txtZip.setEditable(false);
 
-        txtName.setText("jTextField2");
+        txtName.setEditable(false);
         txtName.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtNameActionPerformed(evt);
@@ -156,6 +161,7 @@ public class CityForm extends javax.swing.JDialog {
         });
 
         btnUpdate.setText("Update");
+        btnUpdate.setEnabled(false);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -165,19 +171,19 @@ public class CityForm extends javax.swing.JDialog {
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel3)
-                        .addGap(18, 18, 18)
-                        .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 252, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jLabel2)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(txtZip, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(btnUpdate)
-                    .addComponent(btnDelete))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(btnEnableChanges)
+                        .addComponent(txtZip, javax.swing.GroupLayout.PREFERRED_SIZE, 250, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnDelete))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel3)
+                        .addGap(18, 18, 18)
+                        .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, 252, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(btnEnableChanges)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnUpdate)))
                 .addContainerGap(154, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
@@ -192,8 +198,8 @@ public class CityForm extends javax.swing.JDialog {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel3)
                     .addComponent(txtName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnEnableChanges)
-                    .addComponent(btnUpdate))
+                    .addComponent(btnUpdate)
+                    .addComponent(btnEnableChanges))
                 .addContainerGap(58, Short.MAX_VALUE))
         );
 
@@ -234,12 +240,24 @@ public class CityForm extends javax.swing.JDialog {
     }//GEN-LAST:event_txtNameActionPerformed
 
     private void btnDeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnDeleteActionPerformed
-        // TODO add your handling code here:
+        deleteCity(tblCity.getSelectedRow());
     }//GEN-LAST:event_btnDeleteActionPerformed
 
     private void btnEnableChangesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEnableChangesActionPerformed
-        // TODO add your handling code here:
+        btnDelete.setEnabled(false);
+        btnUpdate.setEnabled(true);
+        txtZip.setEditable(true);
+        txtName.setEditable(true);
     }//GEN-LAST:event_btnEnableChangesActionPerformed
+
+    private void tblCityMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblCityMouseClicked
+
+        showSelected(tblCity.getSelectedRow());
+        btnDelete.setEnabled(true);
+        btnUpdate.setEnabled(false);
+        txtZip.setEditable(false);
+        txtName.setEditable(false);
+    }//GEN-LAST:event_tblCityMouseClicked
 
     /**
      * @param args the command line arguments
@@ -306,8 +324,29 @@ public class CityForm extends javax.swing.JDialog {
         try {
             //popuni tabelu city sa podacima iz baze
             List<City> cities = new CityRepository().returnCities();
+            
+            TableModel tm = tblCity.getModel();
+            if (tm instanceof DefaultTableModel) {
+                DefaultTableModel dtm = (DefaultTableModel)tm;
+                
+                for (City city : cities) {
+                    Object[] rowData = {city.getZipcode(), city.getName()};
+                    dtm.addRow(rowData);
+                }
+            }
         } catch (Exception ex) {
             Logger.getLogger(CityForm.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    private void showSelected(int selectedRow) {
+        int zipcode = Integer.valueOf(tblCity.getValueAt(selectedRow, 0).toString());
+        String name = String.valueOf(tblCity.getValueAt(selectedRow, 1));
+        txtZip.setText(String.valueOf(zipcode));
+        txtName.setText(name);
+    }
+
+    private void deleteCity(int selectedRow) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }
